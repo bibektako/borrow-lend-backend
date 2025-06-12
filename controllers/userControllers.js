@@ -25,15 +25,16 @@ exports.registerUser = async (req, res) => {
 
     await newUser.save();
 
-    // const token = jwt.sign(
-    //   { id: newUser._id, username: newUser.username },
-    //   process.env.JWT_SECRET || "your_jwt_secret_key",
-    //   { expiresIn: "1h" }
-    // );
+    const token = jwt.sign(
+      { id: newUser._id, username: newUser.username },
+      process.env.JWT_SECRET || "your_jwt_secret_key",
+      { expiresIn: "7d" }
+    );
 
     res.status(201).json({
       success: true,
       message: "User registered successfully",
+      token
     });
   } catch (error) {
     res.status(500).json({
@@ -50,29 +51,22 @@ exports.loginUser = async (req, res) => {
     const getUser = await User.findOne({
       email: email,
     });
-    if (!getUser) {
-      return res.status(400).json({
-        success: false,
-        message: "user not found",
-      });
-    }
-    const passwordCheck = await bcrypt.compare(password, getUser.password);
-    if (!passwordCheck) {
-      return res.status(400).json({
-        success: false,
-        message: "Invalid password",
-      });
-    }
+    if (!getUser || !(await bcrypt.compare(password, getUser.password))) {
+  return res.status(400).json({
+    success: false,
+    message: "Invalid email or password",
+  });
+}
     const payLoad = {
       _id: getUser._id,
       email: getUser.email,
       username: getUser.username,
     };
-    const token = jwt.sign(payLoad, process.env.SECRET, { expiresIn: "7d" });
+    const token = jwt.sign(payLoad, process.env.JWT_SECRET || "your_jwt_secret_key", { expiresIn: "7d" });
+
     return res.status(200).json({
       success: true,
       message: "login success",
-      data: getUser,
       token: token,
     });
   } catch (err) {
