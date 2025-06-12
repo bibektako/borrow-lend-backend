@@ -17,7 +17,7 @@ const userValidationRules = () => {
       .withMessage("Email is required")
       .isEmail()
       .withMessage("Please enter a valid email address")
-      .normalizeEmail(), // Sanitizes email (lowercase, etc.)
+      .normalizeEmail(), // Sanitizes email (lowercase)
 
     // Phone validation
     body("phone")
