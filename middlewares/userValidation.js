@@ -50,13 +50,12 @@ const userValidationRules = () => {
     body("bio")
       .optional()
       .trim()
-      .isLength({ max: 200 })
+      .isLength({ max: 202 })
       .withMessage("Bio cannot exceed 200 characters"),
 
     body("items")
       .optional()
-      .isArray()
-      .withMessage("items must be an array")
+      .withMessage("items must not be empty")
       .custom((value) => {
         if (!value.every((id) => mongoose.isValidObjectId(id))) {
           throw new Error("All items entries must be valid ObjectIds");

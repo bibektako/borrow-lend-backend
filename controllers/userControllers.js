@@ -31,7 +31,7 @@ exports.registerUser = async (req, res) => {
     res.status(201).json({
       success: true,
       message: "User registered successfully",
-      token
+      token,
     });
   } catch (error) {
     res.status(500).json({
@@ -49,17 +49,21 @@ exports.loginUser = async (req, res) => {
       email: email,
     });
     if (!getUser || !(await bcrypt.compare(password, getUser.password))) {
-  return res.status(400).json({
-    success: false,
-    message: "Invalid email or password",
-  });
-}
+      return res.status(400).json({
+        success: false,
+        message: "Invalid email or password",
+      });
+    }
     const payLoad = {
       _id: getUser._id,
       email: getUser.email,
       username: getUser.username,
     };
-    const token = jwt.sign(payLoad, process.env.JWT_SECRET || "your_jwt_secret_key", { expiresIn: "7d" });
+    const token = jwt.sign(
+      payLoad,
+      process.env.JWT_SECRET || "your_jwt_secret_key",
+      { expiresIn: "7d" }
+    );
 
     return res.status(200).json({
       success: true,
