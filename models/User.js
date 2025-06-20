@@ -27,11 +27,6 @@ const UserSchema = new mongoose.Schema({
     bio:{
         type:String
     },
-    items:{
-        type:mongoose.Schema.ObjectId,
-        ref:'Items',
-
-    },
     role:{
         type:String,
         default:"normal"
