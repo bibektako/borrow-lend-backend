@@ -10,7 +10,7 @@ connectDB();
 
 app.use(express.json())
 app.use("/api/auth", userRoutes)
-app.use("/api/admin", categoryRoutes)
+app.use("/api/admin/category", categoryRoutes)
 app.use("/api/admin/", itemRouters)
 
 const PORT = process.env.PORT;
