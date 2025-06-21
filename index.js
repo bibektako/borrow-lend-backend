@@ -33,6 +33,7 @@
 
 require("dotenv").config(); // <-- ADD THIS LINE AT THE VERY TOP
 const express = require('express');
+const cors = require('cors');
 const path = require('path');
 const connectDB = require("./config/db"); // <-- ADD THIS LINE
 const userRoutes = require("./routes/userRoutes");
@@ -41,7 +42,8 @@ const itemsRoutes = require("./routes/itemsRoutes");
 const app = express();
 
 
-connectDB(); // <-- ADD THIS LINE TO EXECUTE THE CONNECTION
+connectDB(); 
+app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname, "public")));
 

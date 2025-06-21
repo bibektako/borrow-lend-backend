@@ -28,7 +28,7 @@ const itemSchema = new mongoose.Schema(
     imageUrls: [
       {
         type: String,
-        required: true
+        required: true,
       },
     ],
     borrowingPrice: {

@@ -18,7 +18,7 @@ router.get("/:id", getItemById);
 
 
 router.post("/", authenticateUser, upload.array('imageUrls', 5), createItem);
-router.put("/:id", authenticateUser, updateItem);
+router.put("/:id", authenticateUser, upload.array('imageUrls', 5), updateItem);
 router.delete("/:id", authenticateUser, deleteItem);
 
 

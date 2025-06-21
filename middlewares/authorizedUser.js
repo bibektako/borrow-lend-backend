@@ -9,7 +9,10 @@ exports.authenticateUser = async (req, res, next) => {
   if (authHeader && authHeader.startsWith("Bearer ")) {
     try {
       token = authHeader.split(" ")[1];
-
+      console.log("Middleware: Attempting to verify token:", token); // Log the token
+      
+      // DEBUG: Log the secret used for verification
+      console.log("Verifying token with secret:", process.env.SECRET);
       // Verify the token using the secret key
       const decoded = jwt.verify(token, process.env.SECRET);
 
@@ -25,6 +28,7 @@ exports.authenticateUser = async (req, res, next) => {
       req.user = user;
       next();
     } catch (error) {
+      console.error("JWT Verification Error:", error.name, error.message);
       // Handle specific JWT errors
       if (error.name === "JsonWebTokenError") {
         return res

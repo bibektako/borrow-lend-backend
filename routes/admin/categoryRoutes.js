@@ -2,7 +2,7 @@ const express = require("express");
 const router = express.Router();
 
 const categoryController = require("../../controllers/admin/categoryManagement");
-
+const upload = require("../../middlewares/uploadMiddleware")
 const {
   authenticateUser,
   isAdmin,
@@ -12,12 +12,13 @@ router.get("/", categoryController.getAllCategories);
 
 router.get("/:id", categoryController.getCategoryById);
 
-router.post("/", authenticateUser, isAdmin, categoryController.createCategory);
+router.post("/", authenticateUser, isAdmin,upload.single("image"), categoryController.createCategory);
 
 router.put(
   "/:id",
   authenticateUser,
   isAdmin,
+  upload.single("image"),
   categoryController.updateCategory
 );
 router.delete(

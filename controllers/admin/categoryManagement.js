@@ -8,39 +8,38 @@ const path = require('path');
  * @access  Private
  */
 exports.createCategory = async (req, res) => {
-    const { name, imageUrl } = req.body;
+    console.log("📝 Body:", req.body);
+  console.log("🖼️ File:", req.file);
+  // `name` is parsed by multer and is on `req.body`
+  const { name } = req.body;
 
-    // Basic validation
-    if (!name || !imageUrl) {
-        return res.status(400).json({ success: false, message: 'Please provide a name and an imageUrl' });
-    }
+  // `req.file` contains info about the uploaded file from your middleware
+  // If no file was uploaded, req.file will be undefined.
+  const imagePath = req.file ? req.file.path : null; 
 
-    try {
-        // Check if category with the same name already exists
-        const existingCategory = await Category.findOne({ name });
-        if (existingCategory) {
-            return res.status(400).json({ success: false, message: 'A category with this name already exists.' });
-        }
+  if (!name) {
+    return res.status(400).json({ message: "Category name is required." });
+  }
 
-        const category = new Category({
-            name,
-            imageUrl,
-        });
+  try {
+    const newCategory = new Category({
+      name: name,
+      // Save the path to the image in your database
+      imageUrl: imagePath, 
+    });
 
-        await category.save();
+    await newCategory.save();
 
-        return res.status(201).json({
-            success: true,
-            message: "Category created successfully",
-            data: category
-        });
-    } catch (err) {
-        // Handle other potential errors, e.g., validation errors
-        if (err.name === 'ValidationError') {
-            return res.status(400).json({ success: false, message: err.message });
-        }
-        return res.status(500).json({ success: false, message: "Server Error" });
-    }
+    res.status(201).json({
+      message: "Category created successfully",
+      category: newCategory,
+    });
+  } catch (error) {
+    res.status(500).json({
+      message: "Server error while creating category.",
+      error: error.message,
+    });
+  }
 };
 
 /**
@@ -82,7 +81,7 @@ exports.getCategoryById = async (req, res) => {
 exports.updateCategory = async (req, res) => {
     try {
         const { name } = req.body;
-        const newImageUrl = req.body.imageUrl;
+        const newImageUrl = req.file ? req.file.path : req.body.imageUrl;
 
         const updateData = {};
         if (name) {
@@ -134,8 +133,8 @@ exports.deleteCategory = async (req, res) => {
        
         try {
             
-            const filename = path.basename(new URL(category.imageUrl).pathname);
-            const localImagePath = path.join(__dirname, '..', '..', 'public', 'uploads', filename); 
+            const filename = path.basename(category.imageUrl);
+            const localImagePath = path.join(__dirname, '..', '..', 'public', 'uploads', filename);
 
             if (fs.existsSync(localImagePath)) {
                 fs.unlinkSync(localImagePath);
