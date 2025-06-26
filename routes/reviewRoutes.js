@@ -1,6 +1,6 @@
 const express = require("express")
 const router = express.Router()
-const {createReview, getallReviews, getReviewById} = require("../controllers/user/reviewManagement")
+const {createReview, getallReviews, getReviewById, updateOneReview, deleteOneReview} = require("../controllers/user/reviewManagement")
 
 router.post(
     "/create",
@@ -13,6 +13,14 @@ router.get(
 router.get(
     "/:id",
     getReviewById
+)
+router.put(
+    "/:id",
+    updateOneReview
+)
+router.delete(
+    "/:id",
+    deleteOneReview
 )
 
 module.exports = router

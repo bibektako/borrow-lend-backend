@@ -53,3 +53,52 @@ exports.getReviewById = async (req, res)=>{
     }
 }
 
+exports.updateOneReview = async (req, res) =>{
+    const {rating, comment} = req.body
+    const _id = req.params.id
+    try {
+        const review = await Review.updateOne(
+            {
+                "_id":_id
+            },
+            {
+                $set: {
+                    "rating": rating,
+                    "comment": comment
+                }
+            }
+        )
+        return res.status(200).json(
+            {
+                "Success": true, 
+                "message": "Review updated"
+            }
+        )
+    } catch (error) {
+        return res.status(500).json({
+            "success":false,
+            "message":"Server error"
+        })
+    }
+
+}
+
+exports.deleteOneReview = async(req, res) =>{
+    try{
+        const _id = req.params.id
+        const review = await Review.deleteOne(
+            {
+                "_id":_id
+            }
+        )
+        return res.status(200).json({
+            success: true,
+            message: "Review deleted"
+        })
+    }catch(err){
+        return res.status(500).json({
+            success: false,
+            message: "Server Error"
+        })
+    }
+}
