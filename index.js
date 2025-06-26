@@ -31,21 +31,22 @@
 // });
 
 
-require("dotenv").config(); // <-- ADD THIS LINE AT THE VERY TOP
+require("dotenv").config(); 
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
-const connectDB = require("./config/db"); // <-- ADD THIS LINE
+const connectDB = require("./config/db"); 
 const userRoutes = require("./routes/userRoutes");
 const categoryRoutes = require("./routes/admin/categoryRoutes");
 const itemsRoutes = require("./routes/itemsRoutes");
+const reviewRoutes = require("./routes/reviewRoutes")
 const app = express();
 
 
 connectDB(); 
 app.use(cors());
 app.use(express.json());
-app.use(express.static(path.join(__dirname, "public")));
+app.use('/uploads',express.static(path.join(__dirname, "public/uploads")));
 
 app.get('/', (req, res) => {
   res.send('<h1>Success! The basic server is working.</h1>');
@@ -53,6 +54,9 @@ app.get('/', (req, res) => {
 app.use("/api/auth", userRoutes);
 app.use("/api/admin/category", categoryRoutes);
 app.use("/api/items", itemsRoutes);
+app.use("/api/items/review", reviewRoutes);
+
+
 
 const PORT = process.env.PORT
 app.listen(PORT, () => {

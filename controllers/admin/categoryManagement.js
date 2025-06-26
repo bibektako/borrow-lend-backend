@@ -2,19 +2,12 @@ const Category = require('../../models/Category');
 const fs = require('fs'); 
 const path = require('path'); 
 
-/**
- * @desc    Create a new category
- * @route   POST /api/categories
- * @access  Private
- */
+
 exports.createCategory = async (req, res) => {
-    console.log("📝 Body:", req.body);
-  console.log("🖼️ File:", req.file);
-  // `name` is parsed by multer and is on `req.body`
+  
   const { name } = req.body;
 
-  // `req.file` contains info about the uploaded file from your middleware
-  // If no file was uploaded, req.file will be undefined.
+
   const imagePath = req.file ? req.file.path : null; 
 
   if (!name) {
@@ -42,11 +35,7 @@ exports.createCategory = async (req, res) => {
   }
 };
 
-/**
- * @desc    Get all categories
- * @route   GET /api/categories
- * @access  Public
- */
+
 exports.getAllCategories = async (req, res) => {
     try {
         const categories = await Category.find();
@@ -56,11 +45,7 @@ exports.getAllCategories = async (req, res) => {
     }
 };
 
-/**
- * @desc    Get a single category by ID
- * @route   GET /api/categories/:id
- * @access  Public
- */
+
 exports.getCategoryById = async (req, res) => {
     try {
         const category = await Category.findById(req.params.id);
@@ -73,11 +58,7 @@ exports.getCategoryById = async (req, res) => {
     }
 };
 
-/**
- * @desc    Update a category
- * @route   PUT /api/categories/:id
- * @access  Private
- */
+
 exports.updateCategory = async (req, res) => {
     try {
         const { name } = req.body;
@@ -116,11 +97,6 @@ exports.updateCategory = async (req, res) => {
     }
 };
 
-/**
- * @desc    Delete a category
- * @route   DELETE /api/categories/:id
- * @access  Private
- */
 exports.deleteCategory = async (req, res) => {
     try {
         // First, find the category to get its imageUrl
