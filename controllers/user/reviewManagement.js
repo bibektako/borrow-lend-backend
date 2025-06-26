@@ -18,7 +18,38 @@ exports.createReview = async (req, res) =>{
     }catch(e){
         return res.status(500).json({
             success: false,
-            message:e.message,
+            message:`server error ${e.message}`,
         });
     }
 }
+
+exports.getallReviews = async (req, res) =>{
+    try{
+        const review = await Review.find()
+        .populate("User", "user_id")
+        .populate("Items", "item_id ");
+
+        return res.status(200).json({
+            success: true,
+            message: "Data fetched",
+            data: review,
+        });
+
+    } catch (err){
+        return res.status(500).json({
+            success: false,
+            message:`server error ${err.message}`
+        });
+    }
+}
+exports.getReviewById = async (req, res)=>{
+    try{
+        const review = await Review.findById(req.params.id);
+        if (!review) return res.status(404).json({ success: false, message:"Review not found"});
+        return res.json({ success: true, data: review , message: "one review"});
+
+    }catch(err){
+        return res.status(500).json({success: false,message: "Server error"})
+    }
+}
+

@@ -53,8 +53,9 @@ app.get('/', (req, res) => {
 });
 app.use("/api/auth", userRoutes);
 app.use("/api/admin/category", categoryRoutes);
-app.use("/api/items", itemsRoutes);
 app.use("/api/items/review", reviewRoutes);
+app.use("/api/items", itemsRoutes);
+
 
 
 
