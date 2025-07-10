@@ -69,6 +69,9 @@ exports.loginUser = async (req, res) => {
       username: getUser.username,
     };
     const token = jwt.sign(payLoad, process.env.SECRET, { expiresIn: "7d" });
+
+    // console.log(token);
+
     return res.status(200).json({
       success: true,
       message: "login success",

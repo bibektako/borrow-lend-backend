@@ -23,25 +23,34 @@ exports.createReview = async (req, res) =>{
     }
 }
 
-exports.getallReviews = async (req, res) =>{
-    try{
-        const review = await Review.find()
-        .populate("User", "user_id")
-        .populate("Items", "item_id ");
+exports.getallReviews = async (req, res) => {
+  try {
+    const filter = {};
 
-        return res.status(200).json({
-            success: true,
-            message: "Data fetched",
-            data: review,
-        });
-
-    } catch (err){
-        return res.status(500).json({
-            success: false,
-            message:`server error ${err.message}`
-        });
+   
+    if (req.query.item_id) {
+      filter.item_id = req.query.item_id;
     }
-}
+
+    
+    const reviews = await Review.find(filter)
+      .populate("user_id", "username") 
+      .sort({ createdAt: -1 }); 
+
+    return res.status(200).json({
+      success: true,
+      message: "Reviews fetched successfully",
+      data: reviews,
+    });
+
+  } catch (err) {
+    console.error("Error fetching reviews:", err);
+    return res.status(500).json({
+      success: false,
+      message: `Server error: ${err.message}`
+    });
+  }
+};
 exports.getReviewById = async (req, res)=>{
     try{
         const review = await Review.findById(req.params.id);

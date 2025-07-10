@@ -37,7 +37,7 @@ const itemSchema = new mongoose.Schema(
       min: [0, "Price cannot be negative."],
       default: 0,
     },
-
+  
     status: {
       type: String,
       enum: ["available", "borrowed", "requested"],
