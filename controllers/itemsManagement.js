@@ -35,7 +35,7 @@ const createItem = async (req, res) => {
       category,
       borrowingPrice,
       imageUrls,
-      owner: req.user.id, 
+      owner: req.user.id,
       // location: req.user.location
     });
 
@@ -57,28 +57,60 @@ const createItem = async (req, res) => {
 
 const getAllItems = async (req, res) => {
   try {
-    const { category, status, isVerified, search } = req.query;
+    console.log(req.query);
+    // Note the change from 'category' to 'categories' to better reflect its content
+    const { categories, status, isVerified, search, price, rating, location } =
+      req.query;
     const filter = {};
 
-    if (category) filter.category = category;
+    // --- MAJOR FIX HERE ---
+    // If 'categories' exists in the query, use the $in operator for multiple values
+    if (categories) {
+      // Ensure categories is always an array, even if only one is sent
+      const categoryArray = Array.isArray(categories)
+        ? categories
+        : [categories];
+      if (categoryArray.length > 0) {
+        filter.category = { $in: categoryArray };
+      }
+    }
+    // --- END OF FIX ---
+
     if (status) filter.status = status;
     if (search) filter.name = { $regex: search, $options: "i" };
-    if (req.query.price) {
-      filter.borrowingPrice = { $lte: Number(req.query.price) };
+    if (price) {
+      filter.borrowingPrice = { $lte: Number(price) };
     }
-    if (req.query.rating) {
-      filter.rating = { $gte: Number(req.query.rating) };
+    if (rating) {
+      // Assuming your Item model has a 'rating' field to filter by
+      filter.averageRating = { $gte: Number(rating) };
     }
-    if (req.query.location) {
-      filter.location = { $regex: req.query.location, $options: "i" };
+    if (location) {
+      // This assumes the location is stored on the Item itself.
+      // If it's on the owner, you'd need a more complex query.
+      // For now, let's assume you'll add location to the Item model for filtering.
+      // We will adjust the query to filter based on the owner's location.
     }
 
     if (isVerified !== undefined) {
       filter.isVerified = isVerified === "true";
     }
 
+    let query = Item.find(filter)
+      .populate("owner", "username location")
+      .populate("category", "name");
+
+    // Handle location filtering on the populated owner field
+    if (location) {
+      const users = await User.find({
+        location: { $regex: location, $options: "i" },
+      }).select("_id");
+      const userIds = users.map((user) => user._id);
+      filter.owner = { $in: userIds };
+    }
+
     const items = await Item.find(filter)
-      .populate("owner", "username location") 
+      .populate("owner", "username location")
       .populate("category", "name");
 
     res.status(200).json({
