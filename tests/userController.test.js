@@ -19,7 +19,7 @@ describe("User Authentication API", () => {
   });
 
   describe("POST /api/users/register", () => {
-    it("should register a new user successfully", async () => {
+    test("should register a new user successfully", async () => {
       const userData = {
         username: "testuser",
         email: "test@example.com",
@@ -39,7 +39,7 @@ describe("User Authentication API", () => {
       expect(res.body.message).toBe("User registered successfully");
     });
 
-    it("should return 400 if user with the same email or phone already exists", async () => {
+    test("should return 400 if user with the same email or phone already exists", async () => {
       const userData = {
         username: "existinguser",
         email: "existing@example.com",
@@ -58,7 +58,7 @@ describe("User Authentication API", () => {
       );
     });
 
-    it("should return a 500 error if registration fails", async () => {
+    test("should return a 500 error if registration fails", async () => {
       User.findOne.mockResolvedValue(null);
       bcrypt.hash.mockResolvedValue("hashedPassword");
       const mockSave = jest.fn().mockRejectedValue(new Error("Database error"));
@@ -75,7 +75,7 @@ describe("User Authentication API", () => {
       expect(res.body.error).toBe("Registration failed");
     });
 
-    it("should return 400 for invalid user input", async () => {
+    test("should return 400 for invalid user input", async () => {
       const res = await request(app).post("/api/users/register").send({
         username: "te", 
         email: "not-an-email",
@@ -90,7 +90,7 @@ describe("User Authentication API", () => {
   });
 
   describe("POST /api/users/login", () => {
-    it("should login a user successfully", async () => {
+    test("should login a user successfully", async () => {
       const user = {
         _id: "someId",
         username: "testuser",
@@ -116,7 +116,7 @@ describe("User Authentication API", () => {
       expect(res.body.token).toBe("fake-jwt-token");
     });
 
-    it("should return 400 if user is not found", async () => {
+    test("should return 400 if user is not found", async () => {
       const loginCredentials = {
         email: "nonexistent@example.com",
         password: "Password123!",
@@ -133,7 +133,7 @@ describe("User Authentication API", () => {
       expect(res.body.message).toBe("user not found");
     });
 
-    it("should return 400 for an invalid password", async () => {
+    test("should return 400 for an invalid password", async () => {
       const user = {
         _id: "someId",
         username: "testuser",
@@ -157,7 +157,7 @@ describe("User Authentication API", () => {
       expect(res.body.message).toBe("Invalid password");
     });
 
-    it("should return a 500 error if login fails", async () => {
+    test("should return a 500 error if login fails", async () => {
       User.findOne.mockRejectedValue(new Error("Database error"));
 
       const res = await request(app).post("/api/users/login").send({
