@@ -1,7 +1,7 @@
 const request = require("supertest");
 const express = require("express");
-const userRouter = require("../routes/userRoutes"); 
-const User = require("../models/User"); 
+const userRouter = require("../routes/userRoutes");
+const User = require("../models/User");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 
@@ -77,10 +77,10 @@ describe("User Authentication API", () => {
 
     test("should return 400 for invalid user input", async () => {
       const res = await request(app).post("/api/users/register").send({
-        username: "te", 
+        username: "te",
         email: "not-an-email",
-        phone: "123", 
-        password: "weak", 
+        phone: "123",
+        password: "weak",
       });
 
       expect(res.statusCode).toEqual(400);

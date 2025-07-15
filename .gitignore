@@ -1,6 +1,8 @@
 # Node modules folder
 node_modules/
 
+public/
+
 # Logs
 logs
 *.log
