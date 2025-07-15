@@ -58,15 +58,11 @@ const createItem = async (req, res) => {
 const getAllItems = async (req, res) => {
   try {
     console.log(req.query);
-    // Note the change from 'category' to 'categories' to better reflect its content
     const { categories, status, isVerified, search, price, rating, location } =
       req.query;
     const filter = {};
 
-    // --- MAJOR FIX HERE ---
-    // If 'categories' exists in the query, use the $in operator for multiple values
     if (categories) {
-      // Ensure categories is always an array, even if only one is sent
       const categoryArray = Array.isArray(categories)
         ? categories
         : [categories];
@@ -74,7 +70,6 @@ const getAllItems = async (req, res) => {
         filter.category = { $in: categoryArray };
       }
     }
-    // --- END OF FIX ---
 
     if (status) filter.status = status;
     if (search) filter.name = { $regex: search, $options: "i" };
