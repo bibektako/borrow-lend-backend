@@ -57,56 +57,101 @@ const createItem = async (req, res) => {
 
 const getAllItems = async (req, res) => {
   try {
-    console.log(req.query);
-    const { categories, status, isVerified, search, price, rating, location } =
-      req.query;
-    const filter = {};
+    const { categories, status, isVerified, search, price, rating, location } = req.query;
 
-    if (categories) {
-      const categoryArray = Array.isArray(categories)
-        ? categories
-        : [categories];
-      if (categoryArray.length > 0) {
-        filter.category = { $in: categoryArray };
+    const pipeline = [
+      // ... STAGES 1-4 (lookup, unwind, addFields) remain exactly the same ...
+      // Stage 1: Lookup users
+      {
+        $lookup: {
+          from: 'users',
+          localField: 'owner',
+          foreignField: '_id',
+          as: 'ownerDetails'
+        }
+      },
+      { $unwind: "$ownerDetails" },
+      // Stage 2: Lookup reviews
+      {
+        $lookup: {
+          from: 'reviews',
+          localField: '_id',
+          foreignField: 'item_id',
+          as: 'reviewsData'
+        }
+      },
+      // Stage 3: Calculate rating and numReviews
+      {
+        $addFields: {
+          numReviews: { $size: '$reviewsData' },
+          averageRating: { $ifNull: [{ $avg: '$reviewsData.rating' }, 0] }
+        }
+      },
+      // Stage 4: Filtering $match stage
+      {
+        $match: {
+          ...(search && { name: { $regex: search, $options: 'i' } }),
+          ...(status && { status: status }),
+          ...(isVerified !== undefined && { isVerified: isVerified === 'true' }),
+          ...(price && { borrowingPrice: { $lte: Number(price) } }),
+          ...(rating && { averageRating: { $gte: Number(rating) } }),
+          ...(categories && { category: { $in: Array.isArray(categories) ? categories : [categories] } }),
+          ...(location && { 'ownerDetails.location': { $regex: location, $options: 'i' } })
+        }
+      },
+      // Stage 5: Round the rating
+      {
+          $addFields: {
+              averageRating: { $round: ['$averageRating', 1] }
+          }
+      },
+      // Stage 6: Lookup categories
+      {
+        $lookup: {
+          from: 'categories',
+          localField: 'category',
+          foreignField: '_id',
+          as: 'categoryDetails'
+        }
+      },
+      { $unwind: "$categoryDetails" },
+
+      // --- STAGE 7: THE FIX - Use an Inclusion Projection ---
+      {
+        $project: {
+          // 1. Explicitly list all original fields you want to keep
+          name: 1,
+          description: 1,
+          imageUrls: 1,
+          borrowingPrice: 1,
+          status: 1,
+          isVerified: 1,
+          createdAt: 1,
+          updatedAt: 1,
+          numReviews: 1, // Keep the calculated numReviews
+
+          // 2. Reshape and create new fields
+          rating: '$averageRating', // Create 'rating' from 'averageRating'
+
+          // 3. Create the new 'owner' object, explicitly excluding the password
+          owner: {
+            _id: '$ownerDetails._id',
+            username: '$ownerDetails.username',
+            location: '$ownerDetails.location'
+            // Add any other user fields you want to send
+          },
+
+          // 4. Create the new 'category' object
+          category: {
+             _id: '$categoryDetails._id',
+             name: '$categoryDetails.name'
+             // Add any other category fields
+          }
+        }
       }
-    }
+    ];
 
-    if (status) filter.status = status;
-    if (search) filter.name = { $regex: search, $options: "i" };
-    if (price) {
-      filter.borrowingPrice = { $lte: Number(price) };
-    }
-    if (rating) {
-      // Assuming your Item model has a 'rating' field to filter by
-      filter.averageRating = { $gte: Number(rating) };
-    }
-    if (location) {
-      // This assumes the location is stored on the Item itself.
-      // If it's on the owner, you'd need a more complex query.
-      // For now, let's assume you'll add location to the Item model for filtering.
-      // We will adjust the query to filter based on the owner's location.
-    }
-
-    if (isVerified !== undefined) {
-      filter.isVerified = isVerified === "true";
-    }
-
-    let query = Item.find(filter)
-      .populate("owner", "username location")
-      .populate("category", "name");
-
-    // Handle location filtering on the populated owner field
-    if (location) {
-      const users = await User.find({
-        location: { $regex: location, $options: "i" },
-      }).select("_id");
-      const userIds = users.map((user) => user._id);
-      filter.owner = { $in: userIds };
-    }
-
-    const items = await Item.find(filter)
-      .populate("owner", "username location")
-      .populate("category", "name");
+    const items = await Item.aggregate(pipeline);
 
     res.status(200).json({
       success: true,
@@ -114,13 +159,16 @@ const getAllItems = async (req, res) => {
       data: items,
       message: "Items fetched successfully.",
     });
+
   } catch (error) {
-    console.error(error);
-    res
-      .status(500)
-      .json({ success: false, message: "Server error while fetching items." });
+    console.error(error); // Log the detailed error
+    res.status(500).json({
+      success: false,
+      message: "Server error while fetching items."
+    });
   }
 };
+
 
 const getItemById = async (req, res) => {
   try {
@@ -239,7 +287,40 @@ const verifyItem = async (req, res) => {
       .status(500)
       .json({ success: false, message: "Server error while verifying item." });
   }
+  };
+
+const getMyItems = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const items = await Item.find({ owner: userId }).populate(
+      "category",
+      "name"
+    );
+
+    if (!items) {
+      return res.status(200).json({
+        success: true,
+        data: [],
+        message: "No items found for this user.",
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      data: items,
+      message: "User's items fetched successfully.",
+    });
+  } catch (error) {
+    console.error("Error fetching user's items:", error);
+    res.status(500).json({
+      success: false,
+      message: "Server error while fetching user's items.",
+      error: error.message,
+    });
+  }
 };
+
+
 
 module.exports = {
   createItem,
@@ -248,4 +329,5 @@ module.exports = {
   updateItem,
   deleteItem,
   verifyItem,
+  getMyItems,
 };

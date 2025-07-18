@@ -6,7 +6,8 @@ const {
   getItemById,
   updateItem,
   deleteItem,
-  verifyItem
+  verifyItem,
+  getMyItems
 } = require("../controllers/itemsManagement");
 
 const { authenticateUser, isAdmin } = require("../middlewares/authorizedUser"); 
@@ -15,6 +16,9 @@ const upload = require("../middlewares/uploadMiddleware");
 
 router.get("/", getAllItems);
 router.get("/:id", getItemById);
+
+
+router.get("/my-items", authenticateUser, getMyItems);
 
 
 router.post("/", authenticateUser, upload.array('imageUrls', 5), createItem);
