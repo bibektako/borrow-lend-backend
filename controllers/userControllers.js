@@ -82,3 +82,9 @@ exports.loginUser = async (req, res) => {
     return res.status(500).json({ success: false, message: err.message });
   }
 };
+exports.getUser = async (req, res) =>{
+    res.status(200).json({
+        success: true,
+        data: req.user,
+    });
+}
