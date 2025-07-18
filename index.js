@@ -35,6 +35,7 @@ const userRoutes = require("./routes/userRoutes");
 const categoryRoutes = require("./routes/admin/categoryRoutes");
 const itemsRoutes = require("./routes/itemsRoutes");
 const reviewRoutes = require("./routes/reviewRoutes");
+const borrowRoutes = require("./routes/borrowRoutes")
 const app = express();
 
 connectDB();
@@ -49,6 +50,7 @@ app.use("/api/auth", userRoutes);
 app.use("/api/admin/category", categoryRoutes);
 app.use("/api/reviews", reviewRoutes);
 app.use("/api/items", itemsRoutes);
+app.use("/api/borrow", borrowRoutes);
 
 const PORT = process.env.PORT;
 app.listen(PORT, () => {

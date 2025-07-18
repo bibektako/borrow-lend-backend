@@ -199,6 +199,18 @@ const updateItem = async (req, res) => {
         .status(404)
         .json({ success: false, message: "Item not found." });
     }
+    const { name, description, category, borrowingPrice } = req.body;
+    if (name) item.name = name;
+    if (description) item.description = description;
+    if (category) item.category = category;
+    if (borrowingPrice) item.borrowingPrice = borrowingPrice;
+
+     if (req.files && req.files.length > 0) {
+      const newImageUrls = req.files.map((file) => file.path);
+      item.imageUrls = newImageUrls;
+    }
+
+    const updateItem = await item.save();
 
     if (item.owner.toString() !== req.user.id) {
       return res.status(403).json({
@@ -215,6 +227,7 @@ const updateItem = async (req, res) => {
     res.status(200).json({
       success: true,
       data: updatedItem,
+      data:updateItem,
       message: "Item updated successfully.",
     });
   } catch (error) {
