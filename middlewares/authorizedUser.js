@@ -3,7 +3,6 @@ const User = require("../models/User");
 
 exports.authenticateUser = async (req, res, next) => {
   let token;
-  // Get token from header
   const authHeader = req.headers.authorization;
 
   if (authHeader && authHeader.startsWith("Bearer ")) {
@@ -11,9 +10,7 @@ exports.authenticateUser = async (req, res, next) => {
       token = authHeader.split(" ")[1];
       console.log("Middleware: Attempting to verify token:", token); // Log the token
       
-      // DEBUG: Log the secret used for verification
       console.log("Verifying token with secret:", process.env.SECRET);
-      // Verify the token using the secret key
       const decoded = jwt.verify(token, process.env.SECRET);
 
       const user = await User.findById(decoded._id).select("-password");
@@ -29,7 +26,6 @@ exports.authenticateUser = async (req, res, next) => {
       next();
     } catch (error) {
       console.error("JWT Verification Error:", error.name, error.message);
-      // Handle specific JWT errors
       if (error.name === "JsonWebTokenError") {
         return res
           .status(401)
@@ -43,7 +39,6 @@ exports.authenticateUser = async (req, res, next) => {
             message: "Unauthorized: Token has expired.",
           });
       }
-      // Handle other potential errors
       return res.status(500).json({
         success: false,
         message: "Authentication failed.",

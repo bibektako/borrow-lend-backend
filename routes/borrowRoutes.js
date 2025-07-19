@@ -6,6 +6,7 @@ const {
   updateBorrowRequestStatus,
 } = require("../controllers/user/borrowController")
 const { authenticateUser } = require("../middlewares/authorizedUser")
+const BorrowRequest = require("../models/BorrowRequest");
 
 router.use(authenticateUser);
 
