@@ -88,3 +88,71 @@ exports.getUser = async (req, res) =>{
         data: req.user,
     });
 }
+exports.addBookmark = async (req, res) => {
+  try {
+    const userId = req.user.id; // From your authMiddleware
+    const { itemId } = req.params;
+
+    const updatedUser = await User.findByIdAndUpdate(
+      userId,
+      { $addToSet: { bookmarks: itemId } },
+      { new: true } // This option returns the updated document
+    );
+
+    if (!updatedUser) {
+      return res.status(404).json({ success: false, message: "User not found" });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "Item bookmarked successfully",
+      data: updatedUser.bookmarks,
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: "Server Error", error: error.message });
+  }
+};
+
+exports.removeBookmark = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { itemId } = req.params;
+
+    const updatedUser = await User.findByIdAndUpdate(
+      userId,
+      { $pull: { bookmarks: itemId } },
+      { new: true }
+    );
+
+    if (!updatedUser) {
+      return res.status(404).json({ success: false, message: "User not found" });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "Bookmark removed successfully",
+      data: updatedUser.bookmarks,
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: "Server Error", error: error.message });
+  }
+};
+
+exports.getBookmarks = async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    const user = await User.findById(userId).populate('bookmarks');
+
+    if (!user) {
+      return res.status(404).json({ success: false, message: "User not found" });
+    }
+
+    res.status(200).json({
+      success: true,
+      data: user.bookmarks,
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: "Server Error", error: error.message });
+  }
+};

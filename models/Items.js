@@ -43,6 +43,7 @@ const itemSchema = new mongoose.Schema(
       enum: ["available", "borrowed", "requested"],
       default: "available",
     },
+    
 
     isVerified: {
       type: Boolean,
