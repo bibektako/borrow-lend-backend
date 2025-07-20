@@ -56,12 +56,11 @@ const createItem = async (req, res) => {
 };
 
 const getAllItems = async (req, res) => {
+
   try {
     const { categories, status, isVerified, search, price, rating, location } = req.query;
 
     const pipeline = [
-      // ... STAGES 1-4 (lookup, unwind, addFields) remain exactly the same ...
-      // Stage 1: Lookup users
       {
         $lookup: {
           from: 'users',
@@ -71,7 +70,6 @@ const getAllItems = async (req, res) => {
         }
       },
       { $unwind: "$ownerDetails" },
-      // Stage 2: Lookup reviews
       {
         $lookup: {
           from: 'reviews',
@@ -80,14 +78,12 @@ const getAllItems = async (req, res) => {
           as: 'reviewsData'
         }
       },
-      // Stage 3: Calculate rating and numReviews
       {
         $addFields: {
           numReviews: { $size: '$reviewsData' },
           averageRating: { $ifNull: [{ $avg: '$reviewsData.rating' }, 0] }
         }
       },
-      // Stage 4: Filtering $match stage
       {
         $match: {
           ...(search && { name: { $regex: search, $options: 'i' } }),
@@ -99,13 +95,11 @@ const getAllItems = async (req, res) => {
           ...(location && { 'ownerDetails.location': { $regex: location, $options: 'i' } })
         }
       },
-      // Stage 5: Round the rating
       {
           $addFields: {
               averageRating: { $round: ['$averageRating', 1] }
           }
       },
-      // Stage 6: Lookup categories
       {
         $lookup: {
           from: 'categories',
@@ -116,10 +110,8 @@ const getAllItems = async (req, res) => {
       },
       { $unwind: "$categoryDetails" },
 
-      // --- STAGE 7: THE FIX - Use an Inclusion Projection ---
       {
         $project: {
-          // 1. Explicitly list all original fields you want to keep
           name: 1,
           description: 1,
           imageUrls: 1,
@@ -130,22 +122,17 @@ const getAllItems = async (req, res) => {
           updatedAt: 1,
           numReviews: 1, // Keep the calculated numReviews
 
-          // 2. Reshape and create new fields
           rating: '$averageRating', // Create 'rating' from 'averageRating'
 
-          // 3. Create the new 'owner' object, explicitly excluding the password
           owner: {
             _id: '$ownerDetails._id',
             username: '$ownerDetails.username',
             location: '$ownerDetails.location'
-            // Add any other user fields you want to send
           },
 
-          // 4. Create the new 'category' object
           category: {
              _id: '$categoryDetails._id',
              name: '$categoryDetails.name'
-             // Add any other category fields
           }
         }
       }

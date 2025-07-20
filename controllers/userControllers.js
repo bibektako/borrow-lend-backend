@@ -138,21 +138,36 @@ exports.removeBookmark = async (req, res) => {
   }
 };
 
+
 exports.getBookmarks = async (req, res) => {
+
   try {
     const userId = req.user.id;
 
-    const user = await User.findById(userId).populate('bookmarks');
+    const user = await User.findById(userId)
+      .populate({
+        path: 'bookmarks',
+        populate: [
+          { path: 'owner', model: 'User', select: 'username location' },
+          { path: 'category', model: 'Category', select: 'name' }
+        ]
+      })
+      .lean(); // <-- ADD THIS .lean() METHOD HERE
 
     if (!user) {
       return res.status(404).json({ success: false, message: "User not found" });
     }
+    
+    const validBookmarks = (user.bookmarks || []).filter(item => item !== null);
+    
+    console.log("FINAL LEAN data being sent:", JSON.stringify(validBookmarks, null, 2));
 
     res.status(200).json({
       success: true,
-      data: user.bookmarks,
+      data: validBookmarks,
     });
   } catch (error) {
+    console.error("Critical Error in getBookmarks:", error);
     res.status(500).json({ success: false, message: "Server Error", error: error.message });
   }
 };
