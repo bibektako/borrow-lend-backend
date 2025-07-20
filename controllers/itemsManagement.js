@@ -3,8 +3,6 @@ const User = require("../models/User");
 const Category = require("../models/Category");
 
 const createItem = async (req, res) => {
-  console.log("Reached createItem controller");
-  res.send("Item created");
   try {
     const { name, description, category, borrowingPrice } = req.body;
 
@@ -291,22 +289,16 @@ const verifyItem = async (req, res) => {
 
 const getMyItems = async (req, res) => {
   try {
-    const userId = req.user.id;
-    const items = await Item.find({ owner: userId }).populate(
-      "category",
-      "name"
-    );
-
-    if (!items) {
-      return res.status(200).json({
-        success: true,
-        data: [],
-        message: "No items found for this user.",
-      });
-    }
+    const userId = req.user.id; 
+    const items = await Item.find({ owner: userId })
+      .populate('owner', 'username location') 
+      .populate('category', 'name')         
+      .sort({ createdAt: -1 })               
+      .lean();                               
 
     res.status(200).json({
       success: true,
+      count: items.length,
       data: items,
       message: "User's items fetched successfully.",
     });
@@ -319,6 +311,7 @@ const getMyItems = async (req, res) => {
     });
   }
 };
+
 
 
 
