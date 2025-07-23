@@ -8,9 +8,7 @@ exports.authenticateUser = async (req, res, next) => {
   if (authHeader && authHeader.startsWith("Bearer ")) {
     try {
       token = authHeader.split(" ")[1];
-      console.log("Middleware: Attempting to verify token:", token); // Log the token
       
-      console.log("Verifying token with secret:", process.env.SECRET);
       const decoded = jwt.verify(token, process.env.SECRET);
 
       const user = await User.findById(decoded._id).select("-password");

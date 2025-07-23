@@ -1,6 +1,8 @@
 const mongoose = require("mongoose");
 const BorrowRequest = require("../../models/BorrowRequest");
 const Item = require("../../models/Items");
+const { createNotification } = require('../../service/notification_service');
+
 
 exports.createBorrowRequest = async (req, res) => {
   try {
@@ -34,6 +36,9 @@ exports.createBorrowRequest = async (req, res) => {
 
     item.status = "requested";
     await item.save();
+
+        await createNotification(item.owner, borrowerId, 'new_request', { req, item });
+
 
     res.status(201).json({
       success: true,
@@ -86,44 +91,65 @@ exports.updateBorrowRequestStatus = async (req, res) => {
   try {
     const { status } = req.body;
     const requestId = req.params.requestId;
-    const userId = req.user.id;
+    const userId = req.user.id; // The user MAKING the change
 
-    const validStatuses = ["approved", "denied", "returned", "cancelled"];
-    if (!validStatuses.includes(status)) {
-      return res.status(400).json({ message: "Invalid status update." });
-    }
-
+    // ... (finding the request and item code is correct) ...
     const request = await BorrowRequest.findById(requestId);
-    if (!request) {
-      return res.status(404).json({ message: "Request not found." });
-    }
-
+    if (!request) return res.status(404).json({ message: "Request not found." });
+    
     const item = await Item.findById(request.item);
-    if (!item) {
-        return res.status(404).json({ message: "Associated item not found." });
-    }
+    if (!item) return res.status(404).json({ message: "Associated item not found." });
+
+    // --- PERMISSION CHECKS ---
+    const isOwner = request.owner.equals(userId);
+    const isBorrower = request.borrower.equals(userId);
 
     if (status === 'approved' || status === 'denied') {
-      if (request.owner.toString() !== userId) return res.status(403).json({ message: "Only the item owner can approve or deny." });
+      if (!isOwner) return res.status(403).json({ message: "Only the item owner can approve or deny." });
       if (request.status !== 'pending') return res.status(400).json({ message: "This request is no longer pending." });
-    } else if (status === 'returned') {
-      if (request.borrower.toString() !== userId) return res.status(403).json({ message: "Only the borrower can return an item." });
+    } 
+    else if (status === 'returned') {
+      if (!isBorrower) return res.status(403).json({ message: "Only the borrower can return an item." });
       if (request.status !== 'approved') return res.status(400).json({ message: "Only an approved item can be returned." });
-    } else if (status === 'cancelled') {
-        if (request.owner.toString() !== userId) return res.status(403).json({ message: "Only the item owner can cancel an approval." });
-        if (request.status !== 'approved') return res.status(400).json({ message: "Only an approved request can be cancelled." });
+    } 
+    // --- THIS IS THE UPDATED LOGIC ---
+    else if (status === 'cancelled') {
+      // Scenario 1: Allow borrower to cancel a PENDING request.
+      if (isBorrower && request.status === 'pending') {
+        // This is a valid action, so we do nothing here and let the code proceed.
+      }
+      // Scenario 2: Allow owner to cancel an APPROVED request.
+      else if (isOwner && request.status === 'approved') {
+        // This is also a valid action, so we let it proceed.
+      }
+      // Scenario 3: All other cancellation attempts are forbidden.
+      else {
+        return res.status(403).json({ message: "You do not have permission to cancel this request in its current state." });
+      }
     }
 
+    // --- Update Status and Save ---
     request.status = status;
     
     if (status === 'approved') {
       item.status = 'borrowed';
     } else if (status === 'denied' || status === 'returned' || status === 'cancelled') {
+      // When a request is cancelled, the item becomes available again.
       item.status = 'available';
     }
 
     await request.save();
     await item.save();
+    
+    // --- Trigger Notification ---
+    let recipientId = null;
+    if (status === 'approved' || status === 'denied') recipientId = request.borrower;
+    else if (status === 'returned') recipientId = request.owner;
+    else if (status === 'cancelled') recipientId = isOwner ? request.borrower : request.owner;
+
+    if (recipientId) {
+      await createNotification(recipientId, userId, status, { req, item });
+    }
     
     res.status(200).json({ success: true, message: `Request status updated to ${status}.`, data: request });
 
