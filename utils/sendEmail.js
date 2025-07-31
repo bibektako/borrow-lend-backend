@@ -10,13 +10,19 @@ const sendEmail = async (options) => {
   });
 
   const mailOptions = {
-    from: 'Your App Name <yourapp@example.com>',
+    from: `BorrowLend <${process.env.EMAIL_FROM}>`,
     to: options.email,
     subject: options.subject,
-    html: options.message, // We'll send an HTML email
+    html: options.message, 
   };
 
-  await transporter.sendMail(mailOptions);
+   try {
+    const info = await transporter.sendMail(mailOptions);
+    console.log('Email sent successfully:', info.response);
+  } catch (error) {
+    console.error('Error from Nodemailer:', error);
+    throw error;
+  }
 };
 
 module.exports = sendEmail;
