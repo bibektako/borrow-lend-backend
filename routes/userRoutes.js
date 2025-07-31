@@ -7,6 +7,8 @@ const {
   addBookmark,
   removeBookmark,
   getBookmarks,
+  forgotPassword,
+  resetPassword
 } = require("../controllers/userControllers");
 const {
   userValidationRules,
@@ -17,6 +19,9 @@ const { authenticateUser } = require("../middlewares/authorizedUser");
 router.post("/register", userValidationRules(), validate, registerUser);
 
 router.post("/login", loginUser);
+router.post('/forgot-password', forgotPassword);
+router.put('/reset-password/:resettoken', resetPassword);
+
 
 router.get("/me", authenticateUser, getUser);
 router.route("/bookmarks").get(authenticateUser, getBookmarks);

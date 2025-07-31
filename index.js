@@ -73,6 +73,10 @@ connectDB();
 app.use(cors());
 app.use(express.json());
 app.use("/public", express.static(path.join(__dirname, "public")));
+app.use((req, res, next) => {
+  console.log(`[BACKEND SERVER] Request received: ${req.method} ${req.originalUrl}`);
+  next(); 
+});
 
 app.get("/", (req, res) => {
   res.send("<h1>Success! The basic server is working.</h1>");

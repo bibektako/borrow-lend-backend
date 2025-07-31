@@ -112,36 +112,27 @@ exports.updateBorrowRequestStatus = async (req, res) => {
       if (!isBorrower) return res.status(403).json({ message: "Only the borrower can return an item." });
       if (request.status !== 'approved') return res.status(400).json({ message: "Only an approved item can be returned." });
     } 
-    // --- THIS IS THE UPDATED LOGIC ---
     else if (status === 'cancelled') {
-      // Scenario 1: Allow borrower to cancel a PENDING request.
       if (isBorrower && request.status === 'pending') {
-        // This is a valid action, so we do nothing here and let the code proceed.
       }
-      // Scenario 2: Allow owner to cancel an APPROVED request.
       else if (isOwner && request.status === 'approved') {
-        // This is also a valid action, so we let it proceed.
       }
-      // Scenario 3: All other cancellation attempts are forbidden.
       else {
         return res.status(403).json({ message: "You do not have permission to cancel this request in its current state." });
       }
     }
 
-    // --- Update Status and Save ---
     request.status = status;
     
     if (status === 'approved') {
       item.status = 'borrowed';
     } else if (status === 'denied' || status === 'returned' || status === 'cancelled') {
-      // When a request is cancelled, the item becomes available again.
       item.status = 'available';
     }
 
     await request.save();
     await item.save();
     
-    // --- Trigger Notification ---
     let recipientId = null;
     if (status === 'approved' || status === 'denied') recipientId = request.borrower;
     else if (status === 'returned') recipientId = request.owner;
