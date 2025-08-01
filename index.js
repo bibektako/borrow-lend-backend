@@ -1,14 +1,11 @@
-
-
 require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
 const path = require("path");
 const connectDB = require("./config/db");
 
-const http = require('http');
+const http = require("http");
 const { Server } = require("socket.io");
-
 
 const userRoutes = require("./routes/userRoutes");
 const categoryRoutes = require("./routes/admin/categoryRoutes");
@@ -17,13 +14,12 @@ const reviewRoutes = require("./routes/reviewRoutes");
 const borrowRoutes = require("./routes/borrowRoutes");
 const notificationRoutes = require("./routes/notificationRoutes");
 
-
 const app = express();
 const server = http.createServer(app);
 
 const io = new Server(server, {
   cors: {
-    origin: "http://localhost:5173", // Your frontend URL
+    origin: "http://localhost:5173",
     methods: ["GET", "POST", "PATCH", "PUT", "DELETE"],
   },
 });
@@ -31,7 +27,6 @@ const io = new Server(server, {
 let onlineUsers = [];
 
 const addUser = (userId, socketId) => {
-  // Add user to the list if they are not already there
   !onlineUsers.some((user) => user.userId === userId) &&
     onlineUsers.push({ userId, socketId });
 };
@@ -58,25 +53,13 @@ io.on("connection", (socket) => {
   });
 });
 
-
-app.set('socketio', io);
-app.set('getUserSocket', getUserSocket);
-
-
-
-
-
-
-
+app.set("socketio", io);
+app.set("getUserSocket", getUserSocket);
 
 connectDB();
 app.use(cors());
 app.use(express.json());
 app.use("/public", express.static(path.join(__dirname, "public")));
-app.use((req, res, next) => {
-  console.log(`[BACKEND SERVER] Request received: ${req.method} ${req.originalUrl}`);
-  next(); 
-});
 
 app.get("/", (req, res) => {
   res.send("<h1>Success! The basic server is working.</h1>");
@@ -86,12 +69,11 @@ app.use("/api/admin/category", categoryRoutes);
 app.use("/api/reviews", reviewRoutes);
 app.use("/api/items", itemsRoutes);
 app.use("/api/borrow", borrowRoutes);
-app.use("/api/notifications", notificationRoutes );
+app.use("/api/notifications", notificationRoutes);
 
 app.use((err, req, res, next) => {
   console.error("--- ❌ UNHANDLED ERROR CAUGHT BY GLOBAL HANDLER ---");
-  console.error(err.stack); // This prints the full error and where it happened
-  res.status(500).send('Something broke!');
+  res.status(500).send("Something broke!");
 });
 
 const PORT = process.env.PORT;

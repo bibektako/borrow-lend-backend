@@ -145,7 +145,6 @@ exports.deleteCategory = async (req, res) => {
         `Error deleting image file for category ${category._id}:`,
         fileError.message
       );
-      // Decide if you want to stop the process or just log the error and continue deleting the DB entry
     }
 
     await Category.findByIdAndDelete(req.params.id);

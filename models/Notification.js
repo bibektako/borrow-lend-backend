@@ -2,12 +2,12 @@ const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
 
 const notificationSchema = new Schema({
-  recipient: { // The user who will receive the notification
+  recipient: { 
     type: Schema.Types.ObjectId,
     ref: 'User',
     required: true,
   },
-  sender: { // The user who triggered the notification
+  sender: { 
     type: Schema.Types.ObjectId,
     ref: 'User',
     required: true,
@@ -17,7 +17,7 @@ const notificationSchema = new Schema({
     enum: ['new_request', 'approved', 'denied', 'cancelled', 'returned'],
     required: true,
   },
-  message: { // The display message for the notification
+  message: { 
     type: String,
     required: true,
   },
@@ -25,12 +25,12 @@ const notificationSchema = new Schema({
     type: Boolean,
     default: false,
   },
-  link: { // A URL to navigate to when the notification is clicked
+  link: { 
     type: String,
     default: '/my-rentals'
   },
 }, {
-  timestamps: true, // Automatically adds createdAt and updatedAt
+  timestamps: true, 
 });
 
 const Notification = mongoose.model('Notification', notificationSchema);

@@ -155,7 +155,7 @@ exports.getBookmarks = async (req, res) => {
           { path: 'category', model: 'Category', select: 'name' }
         ]
       })
-      .lean(); // <-- ADD THIS .lean() METHOD HERE
+      .lean();
 
     if (!user) {
       return res.status(404).json({ success: false, message: "User not found" });

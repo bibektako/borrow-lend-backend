@@ -1,21 +1,16 @@
 const Review = require("../../models/Review");
 
 exports.createReview = async (req, res) =>{
-    console.log("--- ✅ 1. Entered createReview controller ---");
-    console.log("Request Body:", JSON.stringify(req.body, null, 2));
 
     const {rating, comment, user_id, item_id} = req.body;
     try{
-        console.log("--- ✅ 2. Inside try block, before creating model ---");
         const review = new Review({
             rating,
             comment,
             user_id,
             item_id
         });
-        console.log("--- ✅ 3. Mongoose model created, attempting to save... ---");
         await review.save();
-                console.log("--- ✅ 4. Review saved successfully! ---");
 
         return res.status(200).json({
             success: true,
@@ -24,7 +19,7 @@ exports.createReview = async (req, res) =>{
         });
 
     }catch(e){
-                console.error("--- ❌ CRASH: Error caught in createReview catch block ---");
+        console.error("--- ❌ CRASH: Error caught in createReview catch block ---");
 
         console.error("Error fetching reviews:", e);
 
