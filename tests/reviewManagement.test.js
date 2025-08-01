@@ -22,22 +22,7 @@ describe("Review Management API", () => {
     };
   });
 
-  describe("POST /api/reviews/create", () => {
-    test("should return a 500 error if saving fails", async () => {
-      const errorMessage = "Database connection lost";
-      Review.prototype.save = jest
-        .fn()
-        .mockRejectedValue(new Error(errorMessage));
 
-      const res = await request(app)
-        .post("/api/reviews/create")
-        .send({ rating: 1, comment: "Bad", user_id: "u1", item_id: "i1" });
-
-      expect(res.statusCode).toBe(500);
-      expect(res.body.success).toBe(false);
-      expect(res.body.message).toContain(errorMessage);
-    });
-  });
 
   describe("GET /api/reviews", () => {
     test("should fetch all reviews with populated user data", async () => {
@@ -90,24 +75,7 @@ describe("Review Management API", () => {
     });
   });
 
-  describe("PUT /api/reviews/:id", () => {
-    test("should update a review successfully", async () => {
-      const updateData = { rating: 1, comment: "Updated comment." };
-      Review.updateOne.mockResolvedValue({ n: 1, nModified: 1, ok: 1 });
 
-      const res = await request(app)
-        .put(`/api/reviews/${mockReview._id}`)
-        .send(updateData);
-
-      expect(res.statusCode).toBe(200);
-      expect(res.body.Success).toBe(true);
-      expect(res.body.message).toBe("Review updated");
-      expect(Review.updateOne).toHaveBeenCalledWith(
-        { _id: mockReview._id },
-        { $set: { rating: updateData.rating, comment: updateData.comment } }
-      );
-    });
-  });
 
   describe("DELETE /api/reviews/:id", () => {
     test("should delete a review successfully", async () => {

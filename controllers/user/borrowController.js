@@ -27,8 +27,8 @@ exports.createBorrowRequest = async (req, res) => {
     }
 
     const newRequest = new BorrowRequest({
-      item: new mongoose.Types.ObjectId(itemId),
-      borrower: new mongoose.Types.ObjectId(borrowerId),
+      item: itemId,
+      borrower: borrowerId,
       owner: item.owner,
     });
 

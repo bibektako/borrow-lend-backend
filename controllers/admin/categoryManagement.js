@@ -14,7 +14,6 @@ exports.createCategory = async (req, res) => {
   try {
     const newCategory = new Category({
       name: name,
-      // Save the path to the image in your database
       imageUrl: imagePath,
     });
 
@@ -116,7 +115,6 @@ exports.updateCategory = async (req, res) => {
 
 exports.deleteCategory = async (req, res) => {
   try {
-    // First, find the category to get its imageUrl
     const category = await Category.findById(req.params.id);
 
     if (!category) {

@@ -12,7 +12,7 @@ jest.mock("../models/Category");
 jest.mock("jsonwebtoken");
 
 jest.mock("../middlewares/uploadMiddleware", () => ({
-  array: jest.fn((fieldName, maxCount) => (req, res, next) => {
+  array: jest.fn(() => (req, res, next) => {
     req.files = [{ path: "public/uploads/mock-image.jpg" }];
     next();
   }),
@@ -53,6 +53,7 @@ describe("Item Management API", () => {
     User.findById.mockReturnValue({
       select: jest.fn().mockResolvedValue(mockUser),
     });
+
     jwt.verify.mockReturnValue({ _id: mockUser._id });
   });
 
@@ -138,5 +139,50 @@ describe("Item Management API", () => {
       expect(res.statusCode).toBe(403);
       expect(res.body.message).toBe("Forbidden: Admin privilege required.");
     });
+  });
+
+  test("should create an item successfully", async () => {
+    Category.findById.mockResolvedValue({ _id: mockItem.category, name: "Electronics" });
+    Item.prototype.save = jest.fn().mockResolvedValue(mockItem);
+
+    const res = await request(app)
+      .post("/api/items")
+      .set("Authorization", `Bearer ${mockToken}`)
+      .send({
+        name: mockItem.name,
+        description: mockItem.description,
+        category: mockItem.category,
+        borrowingPrice: 100
+      });
+
+    expect(res.statusCode).toBe(201);
+    expect(res.body.success).toBe(true);
+    expect(res.body.message).toBe("Item created successfully.");
+  });
+
+  test("should return 400 if required fields are missing", async () => {
+    const res = await request(app)
+      .post("/api/items")
+      .set("Authorization", `Bearer ${mockToken}`)
+      .send({});
+
+    expect(res.statusCode).toBe(400);
+    expect(res.body.success).toBe(false);
+    expect(res.body.message).toBe("Please provide all required fields.");
+  });
+
+ 
+
+  test("should get all items", async () => {
+    Item.aggregate.mockResolvedValue([mockItem]);
+
+    const res = await request(app)
+      .get("/api/items")
+      .set("Authorization", `Bearer ${mockToken}`);
+
+    expect(res.statusCode).toBe(200);
+    expect(res.body.success).toBe(true);
+    expect(Array.isArray(res.body.data)).toBe(true);
+    expect(res.body.data.length).toBe(1);
   });
 });

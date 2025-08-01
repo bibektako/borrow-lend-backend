@@ -164,4 +164,54 @@ describe("Category Management API", () => {
       expect(Category.findByIdAndDelete).toHaveBeenCalledWith(mockCategory._id);
     });
   });
+
+test("should update a category with new image", async () => {
+  const updatedCategory = {
+    ...mockCategory,
+    name: "Updated Mobiles",
+    imageUrl: "public/uploads/updated-image.png",
+  };
+
+  Category.findByIdAndUpdate.mockResolvedValue(updatedCategory);
+
+  const res = await request(app)
+    .put(`/api/categories/${mockCategory._id}`)
+    .set("Authorization", `Bearer ${mockToken}`)
+    .set("x-test-upload", "true")
+    .send({ name: "Updated Mobiles" });
+
+  expect(res.statusCode).toBe(200);
+  expect(res.body.success).toBe(true);
+  expect(res.body.data.name).toBe("Updated Mobiles");
+});
+test("should return 404 if category to delete is not found", async () => {
+  Category.findById.mockResolvedValue(null);
+
+  const res = await request(app)
+    .delete("/api/categories/invalid-id")
+    .set("Authorization", `Bearer ${mockToken}`);
+
+  expect(res.statusCode).toBe(404);
+  expect(res.body.message).toBe("Category not found");
+});
+test("should return 400 if category name is missing", async () => {
+  const res = await request(app)
+    .post("/api/categories")
+    .set("Authorization", `Bearer ${mockToken}`)
+    .set("x-test-upload", "true")
+    .send({});
+
+  expect(res.statusCode).toBe(400);
+  expect(res.body.message).toBe("Category name is required.");
+});
+test("should return 400 if update data is empty", async () => {
+  const res = await request(app)
+    .put(`/api/categories/${mockCategory._id}`)
+    .set("Authorization", `Bearer ${mockToken}`)
+    .send({});
+
+  expect(res.statusCode).toBe(400);
+  expect(res.body.message).toBe("No update data provided.");
+});
+
 });

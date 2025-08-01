@@ -169,4 +169,35 @@ describe("User Authentication API", () => {
       expect(res.body.success).toBe(false);
     });
   });
+  
+
+  test("should return 401 when no token provided", async () => {
+    const res = await request(app).get("/api/users/me");
+    expect(res.statusCode).toBe(401);
+    expect(res.body.success).toBe(false);
+    expect(res.body.message).toBe("Unauthorized: No token provided.");
+  });
 });
+
+
+
+
+
+describe("POST /api/users/forgot-password", () => {
+  test("should return 200 even if email does not exist (security)", async () => {
+    User.findOne.mockResolvedValue(null);
+
+    const res = await request(app)
+      .post("/api/users/forgot-password")
+      .send({ email: "nonexistent@example.com" });
+
+    expect(res.statusCode).toBe(200);
+    expect(res.body.success).toBe(true);
+    expect(res.body.data).toBe("Email sent");
+  });
+});
+
+
+
+
+
