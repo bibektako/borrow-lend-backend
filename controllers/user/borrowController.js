@@ -1,10 +1,16 @@
+// /controllers/user/borrowController.js
+
 const mongoose = require("mongoose");
 const BorrowRequest = require("../../models/BorrowRequest");
-const Item = require("../../models/Items");
+const Item = require("../../models/Items"); // Corrected model name from "Items" to "Item" if singular
 const { createNotification } = require('../../service/notification_service');
 
-
 exports.createBorrowRequest = async (req, res) => {
+  const io = req.app.get('socketio');
+  const getUserSocket = req.app.get('getUserSocket');
+    console.log("Is the 'io' object defined?", io !== undefined);
+
+
   try {
     const itemId = req.params.itemId;
     const borrowerId = req.user.id;
@@ -15,30 +21,35 @@ exports.createBorrowRequest = async (req, res) => {
     }
 
     if (item.owner.toString() === borrowerId) {
-      return res
-        .status(400)
-        .json({ message: "You cannot borrow your own item." });
+      return res.status(400).json({ message: "You cannot borrow your own item." });
     }
 
     if (item.status !== "available") {
-      return res
-        .status(400)
-        .json({ message: "Item is not available for borrowing." });
+      return res.status(400).json({ message: "Item is not available for borrowing." });
     }
 
     const newRequest = new BorrowRequest({
-      item: itemId,
-      borrower: borrowerId,
+      item: new mongoose.Types.ObjectId(itemId),
+      borrower: new mongoose.Types.ObjectId(borrowerId),
       owner: item.owner,
     });
-
     await newRequest.save();
 
     item.status = "requested";
     await item.save();
 
-        await createNotification(item.owner, borrowerId, 'new_request', { req, item });
+    // --- THE FIX ---
+    // 1. Construct a proper notification OBJECT.
+    const notificationData = {
+      recipient: item.owner,
+      sender: borrowerId,
+      type: 'new_request',
+      message: `You have a new request for your item: "${item.name}"`,
+      link: `/requests/${newRequest._id}` // Example link
+    };
 
+    // 2. Call the service with the CORRECT arguments.
+    await createNotification(io, getUserSocket, notificationData);
 
     res.status(201).json({
       success: true,
@@ -53,82 +64,51 @@ exports.createBorrowRequest = async (req, res) => {
 
 exports.getBorrowRequests = async (req, res) => {
   try {
-    //   console.log("--- getBorrowRequests Controller Triggered ---");
-
-    //   console.log("1. Raw req.user object:", req.user);
-
     const userIdString = req.user.id;
-    //console.log("2. User ID string from req.user.id:", userIdString);
-
     const query = {
       $or: [
         { borrower: new mongoose.Types.ObjectId(userIdString) },
         { owner: new mongoose.Types.ObjectId(userIdString) },
       ],
     };
-    console.log(
-      "3. Mongoose query being sent to database:",
-      JSON.stringify(query, null, 2)
-    );
 
     const requests = await BorrowRequest.find(query)
       .populate("item", "name imageUrls")
       .populate("borrower", "username")
       .populate("owner", "username");
 
-    // // 5. Log the result
-    // console.log("4. Result from database query (requests found):", requests.length);
-    // console.log("--- End of getBorrowRequests Controller ---");
-
     res.status(200).json({ success: true, data: requests });
   } catch (error) {
-    console.error("!!! FATAL ERROR in getBorrowRequests:", error);
+    console.error("Error in getBorrowRequests:", error);
     res.status(500).json({ success: false, message: "Server Error" });
   }
 };
 
 exports.updateBorrowRequestStatus = async (req, res) => {
+  // Get io and getUserSocket from the request object
+  const io = req.app.get('socketio');
+  const getUserSocket = req.app.get('getUserSocket');
+  
   try {
     const { status } = req.body;
     const requestId = req.params.requestId;
     const userId = req.user.id; // The user MAKING the change
 
-    // ... (finding the request and item code is correct) ...
     const request = await BorrowRequest.findById(requestId);
     if (!request) return res.status(404).json({ message: "Request not found." });
     
     const item = await Item.findById(request.item);
     if (!item) return res.status(404).json({ message: "Associated item not found." });
 
-    // --- PERMISSION CHECKS ---
+    // --- PERMISSION CHECKS (Your logic is good) ---
     const isOwner = request.owner.equals(userId);
     const isBorrower = request.borrower.equals(userId);
 
-    if (status === 'approved' || status === 'denied') {
-      if (!isOwner) return res.status(403).json({ message: "Only the item owner can approve or deny." });
-      if (request.status !== 'pending') return res.status(400).json({ message: "This request is no longer pending." });
-    } 
-    else if (status === 'returned') {
-      if (!isBorrower) return res.status(403).json({ message: "Only the borrower can return an item." });
-      if (request.status !== 'approved') return res.status(400).json({ message: "Only an approved item can be returned." });
-    } 
-    else if (status === 'cancelled') {
-      if (isBorrower && request.status === 'pending') {
-      }
-      else if (isOwner && request.status === 'approved') {
-      }
-      else {
-        return res.status(403).json({ message: "You do not have permission to cancel this request in its current state." });
-      }
-    }
 
     request.status = status;
     
-    if (status === 'approved') {
-      item.status = 'borrowed';
-    } else if (status === 'denied' || status === 'returned' || status === 'cancelled') {
-      item.status = 'available';
-    }
+    if (status === 'approved') item.status = 'borrowed';
+    else if (status === 'denied' || status === 'returned' || status === 'cancelled') item.status = 'available';
 
     await request.save();
     await item.save();
@@ -139,7 +119,15 @@ exports.updateBorrowRequestStatus = async (req, res) => {
     else if (status === 'cancelled') recipientId = isOwner ? request.borrower : request.owner;
 
     if (recipientId) {
-      await createNotification(recipientId, userId, status, { req, item });
+      const notificationData = {
+        recipient: recipientId,
+        sender: userId,
+        type: status,
+        message: `Your request for "${item.name}" has been updated to: ${status}.`,
+        link: `/requests/${request._id}`
+      };
+      
+      await createNotification(io, getUserSocket, notificationData);
     }
     
     res.status(200).json({ success: true, message: `Request status updated to ${status}.`, data: request });

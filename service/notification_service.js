@@ -1,11 +1,9 @@
-const Notification = require('../models/Notification');
+const Notification = require("../models/Notification");
 
-exports.createNotification = async (req, notificationData) => {
+exports.createNotification = async (io, getUserSocket, notificationData) => {
   try {
-    const io = req.app.get('socketio');
-    const getUserSocket = req.app.get('getUserSocket');
-
     const newNotification = new Notification(notificationData);
+    console.log(newNotification) ;
     await newNotification.save();
 
     const recipientSocket = getUserSocket(notificationData.recipient.toString());
