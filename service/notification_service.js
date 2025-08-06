@@ -9,9 +9,11 @@ exports.createNotification = async (io, getUserSocket, notificationData) => {
     const recipientSocket = getUserSocket(notificationData.recipient.toString());
 
     if (recipientSocket) {
-      io.to(recipientSocket.socketId).emit('newNotification', newNotification);
-      console.log(`Notification sent to user ${notificationData.recipient}`);
-    } else {
+  const populatedNotification = await newNotification.populate('sender', 'username');
+  
+  io.to(recipientSocket.socketId).emit('newNotification', populatedNotification);
+  console.log(`Notification sent to user ${notificationData.recipient}`);
+} else {
       console.log(`User ${notificationData.recipient} is offline. Notification saved.`);
     }
 
